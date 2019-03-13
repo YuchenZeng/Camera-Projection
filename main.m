@@ -21,7 +21,7 @@ load('./project2_files/Subject4-Session3-Take4_mocapJoints.mat')
 load('./project2_files/vue2CalibInfo.mat');
 load('./project2_files/vue4CalibInfo.mat');
 
-%Use parallel computing
+%Use parallel computing. Move <mocapJoints to the GPU>
 mocapJoints = gpuArray(mocapJoints);
 mocapJoints_transpose = permute(mocapJoints,[3,2,1]);
 %World Coordinates to Camera Coordinates
@@ -43,19 +43,23 @@ FILM4_coords = [temp_x;temp_y;temp];
 PIXEL2_coords = pagefun(@mtimes,vue2.Kmat,FILM2_coords);
 PIXEL4_coords = pagefun(@mtimes,vue4.Kmat,FILM4_coords);
 
-
+%reconstruct 3d world with pixel locations
+%c2,c4: camera location
 c2 = vue2.position;
 c4 = vue4.position;
-
+%now lets get the vector that pointing to the world location of the joint
+%that is coming from the camera
 temp = transpose(vue2.Rmat) * inv(vue2.Kmat);
 v2 = pagefun(@mtimes,temp,PIXEL2_coords);
 temp = transpose(vue4.Rmat) * inv(vue4.Kmat);
 v4 = pagefun(@mtimes,temp,PIXEL4_coords);
+%move data back to the RAM from GPU
 v2 = gather(v2);
 v4 = gather(v4);
-
+%now we calculate the point
 for i1 = 1:26214
     for i2 = 1:12
+        %<_n>: normalized vector
         v2_n = v2(:,i2,i1)./norm(v2(:,i2,i1));
         v4_n = v4(:,i2,i1)./norm(v4(:,i2,i1));
         v3_n = cross(v2_n,v4_n)./norm(cross(v2_n,v4_n));
@@ -64,17 +68,27 @@ for i1 = 1:26214
         p1 = c2.' + result(1,1) .* v2_n;
         p2 = c4.' + result(3,1) .* v4_n;
         p(:,i2,i1) = (p1+p2)/2;
+        %p will be 3*12*26214 that contains all the reconstruced joint points
     end
 end
 
 
 %now we save the video to a .avi
-f = figure;
-f.Position = [500,500,1920/2,1080/2];
-vue2_fps = vue2video.FrameRate;
+%set parameters
+%how long would you like the generate the video
+sec = 60;%maximum shuold be 262. Larger the value longer it take
+%set quality of the generated video.
+%1: no downscale. Full resolution(1920*1080)
+%2-half resolution, 3-one third resoluion etc
+downscale_constant = 2;
 
+%create a figure to overlay the video and joint points
+f = figure;
+f.Position = [500,500,1920/downscale_constant,1080/downscale_constant];
+vue2_fps = vue2video.FrameRate;
+%use profile() to check algorithm performance
 profile on
-for i = 1:100
+for i = 1:(max(sec*100,26214))
     i
     f.Name = num2str(i);
     mocapFnum = i;
