@@ -1,13 +1,10 @@
 % create a video writer
 output_video = VideoWriter(path_3d);
-
+%these are the parameter that affects the video quality
 output_video.FrameRate = 100;  % Default 30
 output_video.Quality = 100;    % Default 75
 open(output_video);
 
-%create a figure to overlay the video and joint points
-%f = figure;
-%f.Position = [500,500,1920/downscale_constant,1080/downscale_constant];
 
 %move data to GPU if parallel computing is enabled. Using GPU will gain ~-3s
 %per 100 frame generation. 
@@ -18,7 +15,7 @@ end
 for i = 1:(min(sec*100,26214))
     Frame = i
     
-    %now let's draw the reconstruced joints
+    %now let's draw the reconstructed joints
     %now we connect joints
     %right shoulder - right elbow - right wrist
     Rarm_x = [p(1,1,i),p(1,2,i),p(1,3,i)];
@@ -57,7 +54,7 @@ for i = 1:(min(sec*100,26214))
     body_z = [(p(3,1,i)+p(3,4,i))/2,(p(3,7,i)+p(3,10,i))/2];
     plot3(body_x,body_y,body_z,'r', 'LineWidth', 2);
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    %now let's draw the original joints
+    %now let's draw the original joints from <mocapJoints>
     %after calculating the x,y,z we multiple the value by the confidence in
     %order to eliminate points that does not exist
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -21,11 +21,19 @@ PIXEL2_coords = zeros(3,12,Fnum);
 PIXEL4_coords = zeros(3,12,Fnum);
 v2 = zeros(3,12,Fnum);
 v4 = zeros(3,12,Fnum);
+
+%calculate camera coordinates for each frame in each iteration. 
 for i = 1:Fnum
     CAM2_coords(:,:,i) = vue2.Pmat * mocapJoints_transpose(:,:,i);
     CAM4_coords(:,:,i) = vue4.Pmat * mocapJoints_transpose(:,:,i);
 end
 
+%x = X/Z, y = Y/Z
+%here we are not multiplying the focal length of the camera. the parameter
+%<vue2.Kmat> has been multiplyed by the focal length. So we don't have to
+%do it at this step. So the film coordinates are missing a scale of focal
+%length. 
+%temp values will be removed from workspace at the end. 
 temp_x = CAM2_coords(1,:,:)./CAM2_coords(3,:,:);
 temp_y = CAM2_coords(2,:,:)./CAM2_coords(3,:,:);
 temp = ones(1,12,26214);
@@ -35,6 +43,8 @@ temp_x = CAM4_coords(1,:,:)./CAM4_coords(3,:,:);
 temp_y = CAM4_coords(2,:,:)./CAM4_coords(3,:,:);
 FILM4_coords = [temp_x;temp_y;temp];
 
+%now we compute pixel locations based on the film coordinates. The Kmat has
+%a scale factor of focal length
 for i = 1:Fnum
     PIXEL2_coords(:,:,i) = vue2.Kmat * FILM2_coords(:,:,i);
     PIXEL4_coords(:,:,i) = vue4.Kmat * FILM4_coords(:,:,i);
@@ -46,6 +56,7 @@ c2 = vue2.position;
 c4 = vue4.position;
 %now lets get the vector that pointing to the world location of the joint
 %that is coming from the camera
+%backword projection
 temp = transpose(vue2.Rmat) * inv(vue2.Kmat);
 for i = 1:Fnum
     v2(:,:,i) = temp * PIXEL2_coords(:,:,i);
@@ -55,10 +66,14 @@ temp = transpose(vue4.Rmat) * inv(vue4.Kmat);
 for i = 1:Fnum
     v4(:,:,i) = temp * PIXEL4_coords(:,:,i);
 end
+%v2, v4 are the vectors that originate from the camera and point toward the
+%joint
+
 %move data back to the RAM from GPU
 v2 = gather(v2);
 v4 = gather(v4);
-%now we calculate the point
+
+%now we calculate the joint point
 for i1 = 1:26214
     for i2 = 1:12
         %<_n>: normalized vector
@@ -70,6 +85,6 @@ for i1 = 1:26214
         p1 = c2.' + result(1,1) .* v2_n;
         p2 = c4.' + result(3,1) .* v4_n;
         p(:,i2,i1) = (p1+p2)/2;
-        %p will be 3*12*26214 that contains all the reconstruced joint points
     end
 end
+%p will be 3*12*26214 that contains all the reconstruced joint points

@@ -30,7 +30,6 @@ temp_y = CAM4_coords(2,:,:)./CAM4_coords(3,:,:);
 FILM4_coords = [temp_x;temp_y;temp];
 
 %Film Coordinates to Pixel Coordinates
-
 PIXEL2_coords = pagefun(@mtimes,vue2.Kmat,FILM2_coords);
 PIXEL4_coords = pagefun(@mtimes,vue4.Kmat,FILM4_coords);
 

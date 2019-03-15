@@ -5,12 +5,14 @@ format longG                    %show long decimal number without scientific not
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %This parameter determine whether to use parallel computing tool box or
 %not. There are two scripts doing the same thing, <parallel_computing.m>
-%amd <for_loop.m>. They are essentially doing the same thing. 
+%and <for_loop.m>. They are essentially doing the same thing. 
 %1 => enable parallel computing
 %0 => disable parallel computing, use for loop
 %parallel computing is only available if you have a Nvidia GPU
+%for_loop should work on any platform.
 parallel_enable = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%use <profile viewer> to check performance
 profile on
 if (parallel_enable == 1)
     run('./parallel_computing.m');
@@ -31,7 +33,7 @@ for i1 = 1:12
     end
 end
 %save the <d> to a excel spreadsheet
-d = d.';
+d = d.'; %transpose
 xlswrite('./Euclidean_test.xlsx',d,"A1,L26214")
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %now we save the videos. The script "save_<>.m will do the work"
@@ -57,10 +59,10 @@ downscale_constant = 2;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fps = 50;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%run teh scripts
-%run('./save_vue2.m')
+%run the scripts
+run('./save_vue2.m')
 %run('./save_vue4.m')
-run('./save_3d.m')
+%run('./save_3d.m')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
