@@ -5,8 +5,6 @@ reset(gpuDevice(1));
 vue2video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue2.mp4');
 vue4video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue4.mp4');
 
-%load in mocap
-load('./project2_files/Subject4-Session3-Take4_mocapJoints.mat')
 
 %load in camara parameters
 load('./project2_files/vue2CalibInfo.mat');

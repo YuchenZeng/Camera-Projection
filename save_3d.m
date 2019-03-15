@@ -95,8 +95,8 @@ for i = 1:(min(sec*100,26214))
     plot3(body_x,body_y,body_z,'b', 'LineWidth', 1);
     
     view(280,-10);
-    xlim([0 2500]);
-    ylim([0 2500]);
+    xlim([-2100 2500]);
+    ylim([-2400 2500]);
     zlim([0 2500]);
     xlabel('x-axis')
     ylabel('y-axis')

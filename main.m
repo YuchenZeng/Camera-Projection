@@ -12,6 +12,11 @@ format longG                    %show long decimal number without scientific not
 %for_loop should work on any platform.
 parallel_enable = 0;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%load in mocap
+%if you want to use another mocap file, change the file path
+mocapJoints = load('./project2_files/Subject4-Session3-Take4_mocapJoints.mat');
+mocapJoints = cell2mat(struct2cell(mocapJoints));
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %use <profile viewer> to check performance
 profile on
 if (parallel_enable == 1)
@@ -41,11 +46,11 @@ xlswrite('./Euclidean_test.xlsx',d,"A1,L26214")
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %1. video save path
 path_vue2 = './output_vue2.avi';
-path_vue4 = './utput_vue4.avi';
+path_vue4 = './output_vue4.avi';
 path_3d = './output_3d.avi';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %2. how long would you like the generate the video. 
-sec = 60;
+sec = 1;
 %Maximum shuold be 262 since that's video length. Larger the value longer
 %it take
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -61,8 +66,8 @@ fps = 50;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %run the scripts
 run('./save_vue2.m')
-%run('./save_vue4.m')
-%run('./save_3d.m')
+run('./save_vue4.m')
+run('./save_3d.m')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 

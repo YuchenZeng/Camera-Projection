@@ -7,7 +7,7 @@ open(output_video);
 
 %create a figure to overlay the video and joint points
 f1 = figure;
-f1.Position = [500,500,1920/downscale_constant,1080/downscale_constant];
+f1.Position = [10,10,1920/downscale_constant,1080/downscale_constant];
 vue4_fps = vue4video.FrameRate;
 
 %move data to GPU if parallel computing is enabled. Using GPU will gain ~-3s
@@ -16,7 +16,7 @@ if (parallel_enable == 1)
     PIXEL4_coords = gpuArray(PIXEL4_coords);
 end
 
-for i = 1:(min(sec*fps,26214))
+for i = 1:(min(sec*fps,26212))
     Frame = i
     f = 2 * i;
     f1.Name = num2str(i);

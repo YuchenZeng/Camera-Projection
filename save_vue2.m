@@ -18,7 +18,7 @@ end
 
 %because the original video is captured at 50fps, using 100fps is not
 %helping since 2 frames will have same information. 
-for i = 1:(min(sec*fps,26214))
+for i = 1:(min(sec*fps,26212))
     Frame = i
     f1.Name = num2str(i);
     f = 2 * i;
