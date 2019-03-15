@@ -61,7 +61,7 @@ for i = 1:(min(sec*100,26214))
     %after calculating the x,y,z we multiple the value by the confidence in
     %order to eliminate points that does not exist
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    Rarm_x = [mocapJoints_transpose(1,1,i),mocapJoints_transpose(1,2,i),mocapJoints_transpose(1,3,i)] .* mocapJoints_transpose(4,1,i) .* mocapJoints_transpose(4,2,i) .* mocapJoints_transpose(4,3,i)
+    Rarm_x = [mocapJoints_transpose(1,1,i),mocapJoints_transpose(1,2,i),mocapJoints_transpose(1,3,i)] .* mocapJoints_transpose(4,1,i) .* mocapJoints_transpose(4,2,i) .* mocapJoints_transpose(4,3,i);
     Rarm_y = [mocapJoints_transpose(2,1,i),mocapJoints_transpose(2,2,i),mocapJoints_transpose(2,3,i)] .* mocapJoints_transpose(4,1,i) .* mocapJoints_transpose(4,2,i) .* mocapJoints_transpose(4,3,i);
     Rarm_z = [mocapJoints_transpose(3,1,i),mocapJoints_transpose(3,2,i),mocapJoints_transpose(3,3,i)] .* mocapJoints_transpose(4,1,i) .* mocapJoints_transpose(4,2,i) .* mocapJoints_transpose(4,3,i);
     plot3(Rarm_x,Rarm_y,Rarm_z,'b', 'LineWidth', 1);
