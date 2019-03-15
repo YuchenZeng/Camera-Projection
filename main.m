@@ -1,113 +1,67 @@
 addpath('./project2_files');    %include given files
 clc;clear;                      %clean workspace and clear command line window
-reset(gpuDevice(1));
 format longG                    %show long decimal number without scientific notation in command
 
-output_vue2 = VideoWriter('output_vue2.avi');
-output_vue2.FrameRate = 100;  % Default 30
-output_vue2.Quality = 100;    % Default 75
-open(output_vue2);
-
-
-%initialization of VideoReader for the vue video. 
-%YOU ONLY NEED TO DO THIS ONCE AT THE BEGINNING
-vue2video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue2.mp4');
-vue4video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue4.mp4');
-
-%load in mocap
-load('./project2_files/Subject4-Session3-Take4_mocapJoints.mat')
-
-%load in camara parameters
-load('./project2_files/vue2CalibInfo.mat');
-load('./project2_files/vue4CalibInfo.mat');
-
-%Use parallel computing. Move <mocapJoints to the GPU>
-mocapJoints = gpuArray(mocapJoints);
-mocapJoints_transpose = permute(mocapJoints,[3,2,1]);
-%World Coordinates to Camera Coordinates
-CAM2_coords = pagefun(@mtimes,vue2.Pmat,mocapJoints_transpose);
-CAM4_coords = pagefun(@mtimes,vue4.Pmat,mocapJoints_transpose);
-
-%Camera Coordinates to Film Coordinates
-temp_x = CAM2_coords(1,:,:)./CAM2_coords(3,:,:);
-temp_y = CAM2_coords(2,:,:)./CAM2_coords(3,:,:);
-temp = ones(1,12,26214);
-FILM2_coords = [temp_x;temp_y;temp];
-
-temp_x = CAM4_coords(1,:,:)./CAM4_coords(3,:,:);
-temp_y = CAM4_coords(2,:,:)./CAM4_coords(3,:,:);
-FILM4_coords = [temp_x;temp_y;temp];
-
-%Film Coordinates to Pixel Coordinates
-
-PIXEL2_coords = pagefun(@mtimes,vue2.Kmat,FILM2_coords);
-PIXEL4_coords = pagefun(@mtimes,vue4.Kmat,FILM4_coords);
-
-%reconstruct 3d world with pixel locations
-%c2,c4: camera location
-c2 = vue2.position;
-c4 = vue4.position;
-%now lets get the vector that pointing to the world location of the joint
-%that is coming from the camera
-temp = transpose(vue2.Rmat) * inv(vue2.Kmat);
-v2 = pagefun(@mtimes,temp,PIXEL2_coords);
-temp = transpose(vue4.Rmat) * inv(vue4.Kmat);
-v4 = pagefun(@mtimes,temp,PIXEL4_coords);
-%move data back to the RAM from GPU
-v2 = gather(v2);
-v4 = gather(v4);
-%now we calculate the point
-for i1 = 1:26214
-    for i2 = 1:12
-        %<_n>: normalized vector
-        v2_n = v2(:,i2,i1)./norm(v2(:,i2,i1));
-        v4_n = v4(:,i2,i1)./norm(v4(:,i2,i1));
-        v3_n = cross(v2_n,v4_n)./norm(cross(v2_n,v4_n));
-        temp = [v2_n,v3_n,-v4_n];
-        result = linsolve(temp,(c4-c2).');
-        p1 = c2.' + result(1,1) .* v2_n;
-        p2 = c4.' + result(3,1) .* v4_n;
-        p(:,i2,i1) = (p1+p2)/2;
-        %p will be 3*12*26214 that contains all the reconstruced joint points
-    end
-end
-
-
-%now we save the video to a .avi
-%set parameters
-%how long would you like the generate the video
-sec = 60;%maximum shuold be 262. Larger the value longer it take
-%set quality of the generated video.
-%1: no downscale. Full resolution(1920*1080)
-%2-half resolution, 3-one third resoluion etc
-downscale_constant = 2;
-
-%create a figure to overlay the video and joint points
-f = figure;
-f.Position = [500,500,1920/downscale_constant,1080/downscale_constant];
-vue2_fps = vue2video.FrameRate;
-%use profile() to check algorithm performance
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%This parameter determine whether to use parallel computing tool box or
+%not. There are two scripts doing the same thing, <parallel_computing.m>
+%amd <for_loop.m>. They are essentially doing the same thing. 
+%1 => enable parallel computing
+%0 => disable parallel computing, use for loop
+%parallel computing is only available if you have a Nvidia GPU
+parallel_enable = 0;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 profile on
-for i = 1:(max(sec*100,26214))
-    i
-    f.Name = num2str(i);
-    mocapFnum = i;
-    vue2video.CurrentTime = (mocapFnum-1)*(50/100)/vue2_fps;
-    vid2Frame = readFrame(vue2video);
-    image(vid2Frame);
-    hold on;
-    plot(PIXEL2_coords(1,:,i),PIXEL2_coords(2,:,i),'r*', 'LineWidth', 2, 'MarkerSize', 5);
-    M = getframe(f);
-    writeVideo(output_vue2, M);
-    hold off;
+if (parallel_enable == 1)
+    run('./parallel_computing.m');
+elseif (parallel_enable == 0)
+    run('./for_loop.m');
+else
+    error("<parallel_enable> not recognized")
 end
 profile off
-
-close(output_vue2);
-close;
-    
-
-%/////////////////////////////////////////////////////////////////////////
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%at this point, all the computations have been finished
+%Let's calculate errors of our result
+%d = sqrt((X-X')^2 + (Y-Y')^2 + (Z-Z')^2).
+d = zeros(12,26214);
+for i1 = 1:12
+    for i2 = 1:26214
+        d(i1,i2) = sqrt((p(1,i1,i2)-mocapJoints_transpose(1,i1,i2))^2 + (p(2,i1,i2)-mocapJoints_transpose(2,i1,i2))^2 + (p(3,i1,i2)-mocapJoints_transpose(3,i1,i2))^2);
+    end
+end
+%save the <d> to a excel spreadsheet
+d = d.';
+xlswrite('./Euclidean_test.xlsx',d,"A1,L26214")
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%now we save the videos. The script "save_<>.m will do the work"
+%first, let's set parameters
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%1. video save path
+path_vue2 = './output_vue2.avi';
+path_vue4 = './utput_vue4.avi';
+path_3d = './output_3d.avi';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%2. how long would you like the generate the video. 
+sec = 60;
+%Maximum shuold be 262 since that's video length. Larger the value longer
+%it take
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%3. set quality of the generated video.
+downscale_constant = 2;
+%<1> - no downscale. Full resolution(1920*1080)
+%<2> - half resolution
+%<3> - one third resoluion
+%etc. Larger the value, shorter it take but video quality is worse.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fps = 50;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%run teh scripts
+%run('./save_vue2.m')
+%run('./save_vue4.m')
+run('./save_3d.m')
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 

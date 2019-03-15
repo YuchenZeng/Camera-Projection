@@ -1,16 +1,7 @@
-addpath('./project2_files');    %include given files
-clc;clear;                      %clean workspace and clear command line window
+%reset GPU
 reset(gpuDevice(1));
-format longG                    %show long decimal number without scientific notation in command
-
-output_vue2 = VideoWriter('output_vue2.avi');
-output_vue2.FrameRate = 100;  % Default 30
-output_vue2.Quality = 100;    % Default 75
-open(output_vue2);
-
 
 %initialization of VideoReader for the vue video. 
-%YOU ONLY NEED TO DO THIS ONCE AT THE BEGINNING
 vue2video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue2.mp4');
 vue4video = VideoReader('./project2_files/Subject4-Session3-24form-Full-Take4-Vue4.mp4');
 
@@ -72,44 +63,14 @@ for i1 = 1:26214
     end
 end
 
+%now we copy all the data from the GPU back to the RAM
+CAM2_coords = gather(CAM2_coords);
+CAM4_coords = gather(CAM4_coords);
+FILM2_coords = gather(FILM2_coords);
+FILM4_coords = gather(FILM4_coords);
+mocapJoints = gather(mocapJoints);
+mocapJoints_transpose = gather(mocapJoints_transpose);
+PIXEL2_coords = gather(PIXEL2_coords);
+PIXEL4_coords = gather(PIXEL4_coords);
 
-%now we save the video to a .avi
-%set parameters
-%how long would you like the generate the video
-sec = 60;%maximum shuold be 262. Larger the value longer it take
-%set quality of the generated video.
-%1: no downscale. Full resolution(1920*1080)
-%2-half resolution, 3-
-downscale_constant = 2;
-f = figure;
-f.Position = [500,500,1920/downscale_constant,1080/downscale_constant];
-vue2_fps = vue2video.FrameRate;
-
-
-
-profile on
-for i = 1:(max(sec*100,26214))
-    i
-    f.Name = num2str(i);
-    mocapFnum = i;
-    vue2video.CurrentTime = (mocapFnum-1)*(50/100)/vue2_fps;
-    vid2Frame = readFrame(vue2video);
-    image(vid2Frame);
-    hold on;
-    plot(PIXEL2_coords(1,:,i),PIXEL2_coords(2,:,i),'r*', 'LineWidth', 2, 'MarkerSize', 5);
-    M = getframe(f);
-    writeVideo(output_vue2, M);
-    hold off;
-end
-profile off
-
-close(output_vue2);
-close;
-    
-
-%/////////////////////////////////////////////////////////////////////////
-
-
-
-
-
+clear temp temp_x temp_y i1 i2
