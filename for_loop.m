@@ -22,8 +22,12 @@ m_noise = m_noise + 10^(-18)*randn(size(m_noise));
 %transpsoe the mocapJoints matrix. It become 4*12*26214.
 mocapJoints_transpose = permute(mocapJoints,[3,2,1]);
 
+add_noise = 1;
+
 %add gauusian noise
-mocapJoints_transpose = mocapJoints_transpose + m_noise;
+if add_noise:
+    mocapJoints_transpose = mocapJoints_transpose + m_noise;
+end
 
 %initilize matrixs and fill with zero. This will give better performance
 CAM2_coords = zeros(3,12,Fnum);
